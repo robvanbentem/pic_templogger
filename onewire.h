@@ -2,7 +2,7 @@
 #define	ONEWIRE_H
 
 #ifndef OWPIN
-#define OWPIN PORTCbits.RC2
+#define OWPIN PORTCbits.RC1
 #endif
 
 #define OWIN OWPIN = 1
@@ -15,4 +15,3 @@ char ow_read_bit();
 char ow_read_byte();
 
 #endif	/* ONEWIRE_H */
-

@@ -3,10 +3,10 @@
 #include <xc.h>
 
 /**
- * Drive bus low, delay 480 ?s.
- * Release bus, delay 70 ?s.
+ * Drive bus low, delay 480 us.
+ * Release bus, delay 70 us.
  * Sample bus: 0 = device(s) present, 1 = no device present
- * Delay 410 ?s.
+ * Delay 410 us.
  */
 char ow_reset() {
     OWOUT;
@@ -23,8 +23,8 @@ char ow_reset() {
 
 /*
  * Drive bus low.
- * Write 1: delay 6 ?s. Release bus, delay 64 ?s.
- * Write 0: delay 60 ?s. Release bus, delay 10 ?s.
+ * Write 1: delay 6 us. Release bus, delay 64 us.
+ * Write 0: delay 60 us. Release bus, delay 10 us.
  */
 void ow_write_bit(char b) {
     OWOUT;
@@ -41,10 +41,10 @@ void ow_write_bit(char b) {
 }
 
 /*
- * Drive bus low, delay 6 ?s.
- * Release bus, delay 9 ?s.
+ * Drive bus low, delay 6 us.
+ * Release bus, delay 9 us.
  * Sample bus to read bit from slave.
- * Delay 55 ?s.
+ * Delay 55 us.
  */
 char ow_read_bit() {
     OWOUT;

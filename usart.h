@@ -1,22 +1,22 @@
 #ifndef USART_H
 #define	USART_H
 
-#ifdef	__cplusplus
-extern "C" {
+#ifndef BUFLEN
+#define BUFLEN 64
 #endif
 
-#define BUFLEN 64
-    
-volatile unsigned char t;
+volatile unsigned char rx_byte; // usart received byte
 
-unsigned char *rxbuf[BUFLEN];
-unsigned char rxcnt = 0;
+unsigned char *rxbuf[BUFLEN]; // store received bytes in the rx buffer
+unsigned char rxcnt = 0; // position of the rx buffer
 
-volatile unsigned char rxto = 0;
+// tmr1 timeout countdown, will trigger rxto = 1 after 3 tmr1 overflows
 volatile unsigned char rxtoc = 3;
+volatile unsigned char rxto = 0; // rx receive timeout flag
 
 
 // TIMER FUNC.
+
 inline void tmr1_reset();
 void tmr1_start();
 
@@ -25,16 +25,13 @@ void tmr1_start();
 
 void setup_usart();
 
+// writing
 void USART_putc(unsigned char c);
 void USART_puts(unsigned char *s);
 inline void USART_put_eol();
 
+//reading
 void USART_read_byte();
 void read_usart();
 
-#ifdef	__cplusplus
-}
-#endif
-
 #endif	/* USART_H */
-

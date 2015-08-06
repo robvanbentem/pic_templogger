@@ -77,12 +77,12 @@ void USART_read_byte() {
     while (!PIR1bits.RCIF && !rxto);
 
     if (RCSTAbits.FERR == 1) { // framing error
-        t = RCREG;
-        t = 0;
+        rx_byte = RCREG;
+        rx_byte = 0;
         return;
     }
 
-    t = RCREG;
+    rx_byte = RCREG;
 }
 
 inline void USART_put_eol(){
@@ -95,7 +95,7 @@ void read_usart() {
 
     while (rxto == 0) {
         USART_read_byte();
-        *rxbuf[++rxcnt] = t;
+        *rxbuf[++rxcnt] = rx_byte;
         tmr1_reset();
     }
 
