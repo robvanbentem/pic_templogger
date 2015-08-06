@@ -1,6 +1,8 @@
 #include "config.h"
 #include <xc.h>
 #include "usart.h"
+#include <stdio.h>
+#include <string.h>
 
 // INIT. FUNC.
 
@@ -15,7 +17,7 @@ void setup_usart() {
 
     SPBRG = 103; // set baud rate to 19200 baud (32MHz/(16*baudrate))-1
 
-    PIE1bits.RCIE = 1; // 1/0 enable/disable USART receive interrupt
+    PIE1bits.RCIE = 0; // 1/0 enable/disable USART receive interrupt
     RCSTAbits.SPEN = 1; // enable USART
 
 
@@ -34,23 +36,22 @@ void setup_usart() {
 
 // TIMER FUNC.
 
-inline void tmr1_reset() {
-    /**
-     * this will overflow after about ~65ms when running at 32Mhz.
-     * calc: 1sec / (32Mhz / 4FOSC / 1:8 prescaler / 2^16 (16 bit reg.)) = 0.065536sec
-     */
-    TMR1L = 0;
-    TMR1H = 0;
+void tmr1_begin() {
+    tmr1_reset();
+    PIR1bits.TMR1IF = 0; // reset overflow
+    T1CONbits.TMR1ON = 1; // turn it on
 }
 
-void tmr1_start() {
+void tmr1_end() {
+    T1CONbits.TMR1ON = 0; // turn it off
     PIR1bits.TMR1IF = 0; // reset overflow
+}
 
-    rxtoc = 3;
-    rxto = 0;
-    tmr1_reset();
-
-    T1CONbits.TMR1ON = 1; // turn it on
+void tmr1_reset() {
+    rx_timeout = 0;
+    rx_timeout_cnt = rx_timeout_cnt_reset;
+    TMR1L = 0;
+    TMR1H = 0;
 }
 
 // USART FUNC.
@@ -74,7 +75,7 @@ void USART_read_byte() {
         RCSTAbits.CREN = 1;
     }
 
-    while (!PIR1bits.RCIF && !rxto);
+    while (!PIR1bits.RCIF && !rx_timeout);
 
     if (RCSTAbits.FERR == 1) { // framing error
         rx_byte = RCREG;
@@ -85,37 +86,81 @@ void USART_read_byte() {
     rx_byte = RCREG;
 }
 
-inline void USART_put_eol() {
+void USART_put_eol() {
     USART_putc('\r');
     USART_putc('\n');
 }
 
-void read_usart() {
-    tmr1_start();
+void USART_read_to_buf() {
+    tmr1_begin();
 
-    while (rxto == 0) {
+    while (rx_timeout == 0) {
         USART_read_byte();
-        rxbuf[rxcnt++] = rx_byte;
-        tmr1_reset();
+        if (rx_timeout == 0) {
+            tmr1_reset();
+            rx_buf[rx_buf_index++] = rx_byte;
+        }
     }
-
-    rxto = 0;
-    rxcnt = 0;
-    PIE1bits.RCIE = 1;
 }
 
 void USART_interrupt() {
     if (PIR1bits.RCIF == 1) {
-        PIE1bits.RCIE = 0; // disable rx interrupt while recieving
         cmd = 0xA1;
         return;
     } else if (PIR1bits.TMR1IF) {
-        if (--rxtoc == 0) {
-            rxto = 1;
+        if (--rx_timeout_cnt == 0) {
+            rx_timeout = 1;
+            tmr1_end();
+        } else {
+            //Turn timer off, reset it and turn on again
             T1CONbits.TMR1ON = 0;
+
+            TMR1L = 0;
+            TMR1H = 0;
+            PIR1bits.TMR1IF = 0;
+
+            T1CONbits.TMR1ON = 1;
         }
-        tmr1_reset();
-        PIR1bits.TMR1IF = 0;
-        T1CONbits.TMR1ON = 1;
     }
+}
+
+char USART_search(char *s) {
+    USART_read_to_buf();
+
+    char* pos = strstr((char*) rx_buf, s);
+
+    if (pos) {
+        return 1;
+    }
+
+    return 0;
+}
+
+char USART_search_chr(char c) {
+    tmr1_begin();
+
+    while (rx_timeout == 0) {
+        USART_read_byte();
+        if (rx_byte == c) {
+            tmr1_end();
+
+            return 1;
+        } else if (rx_timeout == 0) {
+            tmr1_reset();
+        }
+    }
+
+    return 0;
+}
+
+void USART_clear_buf() {
+    rx_buf_index = 0;
+    memset(&rx_buf, 0, USART_BUFLEN);
+}
+
+void USART_store_buf() {
+    for (char n = 0; n < USART_BUFLEN; n++) {
+        eeprom_write(n, rx_buf[n]);
+    }
+
 }

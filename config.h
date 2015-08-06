@@ -2,19 +2,29 @@
 #define _config_h
 
 // USART receive buffer size
-#define USART_BUFLEN 64
+#define USART_BUFLEN 32
 
 // ds18b20 pin
 #define ONEWIRE_PIN PORTCbits.RC2
 
 // status led pin
-#define LED PORTCbits.RC5
+#define LED0 PORTCbits.RC5
+#define LED1 PORTCbits.RC4
+#define LED2 PORTCbits.RC3
+#define LED3 PORTCbits.RC6
+#define LED4 PORTCbits.RC7
 
 // esp8266 power toggle pin
 #define WIFI PORTBbits.RB4
 
 // clock in hz
 #define _XTAL_FREQ 32000000
+
+// n * ~65ms timeout
+#define USART_MAX_TIMEOUT_COUNT 7
+
+// devicde id
+#define DEVICE_ID 0xB1
 
 
 // CONFIG1L
@@ -39,7 +49,7 @@
 
 // CONFIG3H
 #pragma config HFOFST = ON      // HFINTOSC Fast Start-up bit (HFINTOSC starts clocking the CPU without waiting for the oscillator to stablize.)
-#pragma config MCLRE = OFF       // MCLR Pin Enable bit (MCLR pin enabled; RA3 input pin disabled)
+#pragma config MCLRE = ON       // MCLR Pin Enable bit (MCLR pin enabled; RA3 input pin disabled)
 
 // CONFIG4L
 #pragma config STVREN = ON      // Stack Full/Underflow Reset Enable bit (Stack full/underflow will cause Reset)

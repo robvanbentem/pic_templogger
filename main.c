@@ -26,6 +26,10 @@
 #define AT_MUX_ON (char*)"AT+CIPMUX=1"
 #define AT_SERVER_ON (char*)"AT+CIPSERVER=1,4444"
 #define AT_RESET (char*)"AT+RST"
+#define AT_SEND_OPEN (char*)"AT+CIPSTART=4,\"TCP\",\"192.168.1.2\",4444"
+#define AT_SEND_CLOSE (char*)"AT+CIPCLOSE=4"
+
+#define AT_RESP_OK (char*)"OK"
 
 char sign;
 char degr;
@@ -47,7 +51,6 @@ void setup() {
     ANSELH = 0;
     TRISB = 0;
     TRISC = 0;
-    TRISCbits.RC7 = 1;
     PORTB = 0;
     PORTC = 0;
 
@@ -78,32 +81,6 @@ void get_temp() {
     }
 }
 
-void format_temp(char *p) {
-    int16_t temp = (sign << 8) + degr;
-    sprintf(p, "%f", (temp * 0.0625));
-}
-
-void report_temp(){
-    get_temp();
-    
-    char *temp[16];
-    format_temp((char *)temp);
-
-    USART_puts((char *)temp);
-    USART_put_eol();
-}
-
-void store_buf() {
-    for (unsigned char i = 0; i < USART_BUFLEN; i++) {
-        eeprom_write(i, *rxbuf[i]);
-    }
-}
-
-void clear_buf() {
-    memset(&rxbuf, 0, USART_BUFLEN);
-}
-
-
 
 // INTERRUPT
 
@@ -111,59 +88,104 @@ void interrupt rx() {
     USART_interrupt();
 }
 
-void esp_cmd(unsigned char *data){
+void esp_cmd(unsigned char *data) {
     USART_puts(data);
     USART_put_eol();
 }
 
-void start_wifi_server(){
-    PIE1bits.RCIE = 0;
-
-    esp_cmd(AT_ECHO_OFF);
-    delay(100);
-
-    esp_cmd(AT_MUX_ON);
-    delay(100);
-
-    esp_cmd(AT_SERVER_ON);
-    delay(100);
-
-    PIE1bits.RCIE = 1;
+void led_off() {
+    PORTC = 0;
 }
 
-void reset_wifi(){
-    if(WIFI == 0){
+char wifi_report_temp() {
+    get_temp();
+
+    esp_cmd(AT_SEND_OPEN);
+    if (USART_search(AT_RESP_OK)) {
+        LED3 = 1;
+        USART_clear_buf();
+        esp_cmd((char*) "AT+CIPSEND=4,2");
+        if (USART_search_chr('>')) {
+            LED2 = 1;
+            // Write temperture
+            USART_putc(sign);
+            USART_putc(degr);
+            if (USART_search(AT_RESP_OK)) {
+                LED1 = 1;
+                //USART_clear_buf();
+                esp_cmd(AT_SEND_CLOSE);
+                if (USART_search((char*)"CLOSED")) {
+                    LED0 = 1;
+                    USART_clear_buf();
+                    return 1;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+char wifi_start_server() {
+    PIE1bits.RCIE = 0;
+
+    esp_cmd(AT_SERVER_ON);
+    if (USART_search(AT_RESP_OK)) {
+        USART_clear_buf();
+        PIE1bits.RCIE = 1;
+        return 1;
+    }
+
+    return 0;
+}
+
+char wifi_reset() {
+    if (WIFI == 0) {
         WIFI_ON;
     } else {
         esp_cmd(AT_RESET);
+        USART_search(AT_RESP_OK);
+        USART_clear_buf();
     }
 
     delay(2500);
-    start_wifi_server();
+
+
+    esp_cmd(AT_ECHO_OFF);
+    if (USART_search(AT_RESP_OK)) {
+        USART_clear_buf();
+        esp_cmd(AT_MUX_ON);
+        if (USART_search(AT_RESP_OK)) {
+            USART_clear_buf();
+            LED4 = 1;
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 int main() {
     setup();
 
-    PIR1bits.RCIF = 0; // clear interrupt flag
     INTCONbits.PEIE = 1; // enable peripheral interrupts
     INTCONbits.GIE = 1; // enable global interrupt
 
     while (1) {
-        while (cmd == 0);
-        
-        if (cmd == 0xA1) {
-            cmd = 0;
-            read_usart();
+        if (WIFI == 0) {
+            wifi_reset();
+        } else {
+            LED4 = 1;
         }
 
-        if(cmd == 0xB1){
-            report_temp();
+        if (wifi_report_temp() == 0) {
+            WIFI_OFF;
         }
 
-        store_buf();
-        clear_buf();
-        reset_wifi();
+
+        delay(30000);
+        led_off();
+        delay(25000);
     }
 }
 
