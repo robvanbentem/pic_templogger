@@ -9,8 +9,8 @@ volatile unsigned char cmd = 0;
 
 volatile unsigned char rx_byte; // usart received byte
 
-unsigned char *rxbuf[USART_BUFLEN]; // store received bytes in the rx buffer
-unsigned char rxcnt = 0; // position of the rx buffer
+volatile unsigned char rxbuf[USART_BUFLEN]; // store received bytes in the rx buffer
+volatile unsigned char rxcnt = 0; // position of the rx buffer
 
 // tmr1 timeout countdown, will trigger rxto = 1 after 3 tmr1 overflows
 volatile unsigned char rxtoc = 3;

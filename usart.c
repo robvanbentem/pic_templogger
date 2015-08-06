@@ -95,7 +95,7 @@ void read_usart() {
 
     while (rxto == 0) {
         USART_read_byte();
-        rxbuf[++rxcnt] = rx_byte;
+        rxbuf[rxcnt++] = rx_byte;
         tmr1_reset();
     }
 
