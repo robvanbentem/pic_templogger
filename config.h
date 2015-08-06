@@ -1,6 +1,22 @@
 #ifndef _config_h
 #define _config_h
 
+// USART receive buffer size
+#define USART_BUFLEN 64
+
+// ds18b20 pin
+#define ONEWIRE_PIN PORTCbits.RC2
+
+// status led pin
+#define LED PORTCbits.RC5
+
+// esp8266 power toggle pin
+#define WIFI PORTBbits.RB4
+
+// clock in hz
+#define _XTAL_FREQ 32000000
+
+
 // CONFIG1L
 #pragma config CPUDIV = NOCLKDIV// CPU System Clock Selection bits (No CPU System Clock divide)
 #pragma config USBDIV = OFF     // USB Clock Selection bit (USB clock comes directly from the OSC1/OSC2 oscillator block; no divide)
@@ -54,8 +70,5 @@
 
 // CONFIG7H
 #pragma config EBTRB = OFF      // Boot Block Table Read Protection bit (Boot block not protected from table reads executed in other blocks)
-
-// Frequency
-#define _XTAL_FREQ 32000000
 
 #endif

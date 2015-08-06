@@ -85,7 +85,7 @@ void USART_read_byte() {
     rx_byte = RCREG;
 }
 
-inline void USART_put_eol(){
+inline void USART_put_eol() {
     USART_putc('\r');
     USART_putc('\n');
 }
@@ -95,11 +95,27 @@ void read_usart() {
 
     while (rxto == 0) {
         USART_read_byte();
-        *rxbuf[++rxcnt] = rx_byte;
+        rxbuf[++rxcnt] = rx_byte;
         tmr1_reset();
     }
 
     rxto = 0;
     rxcnt = 0;
     PIE1bits.RCIE = 1;
+}
+
+void USART_interrupt() {
+    if (PIR1bits.RCIF == 1) {
+        PIE1bits.RCIE = 0; // disable rx interrupt while recieving
+        cmd = 0xA1;
+        return;
+    } else if (PIR1bits.TMR1IF) {
+        if (--rxtoc == 0) {
+            rxto = 1;
+            T1CONbits.TMR1ON = 0;
+        }
+        tmr1_reset();
+        PIR1bits.TMR1IF = 0;
+        T1CONbits.TMR1ON = 1;
+    }
 }

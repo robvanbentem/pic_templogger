@@ -7,11 +7,6 @@
 
 #include "config.h"
 
-// IO Config
-#define OWPIN PORTCbits.RC2
-#define LED PORTCbits.RC5
-#define ESP PORTBbits.RB4
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,8 +18,8 @@
 #include "usart.h"
 
 
-#define WIFI_ON ESP = 1
-#define WIFI_OFF ESP = 0
+#define WIFI_ON WIFI = 1
+#define WIFI_OFF WIFI = 0
 
 // AT Commands
 #define AT_ECHO_OFF (char*)"ATE0"
@@ -34,9 +29,6 @@
 
 char sign;
 char degr;
-
-volatile unsigned char cmd = 0;
-
 
 // HELPER FUNC.
 
@@ -102,13 +94,13 @@ void report_temp(){
 }
 
 void store_buf() {
-    for (unsigned char i = 0; i < BUFLEN; i++) {
+    for (unsigned char i = 0; i < USART_BUFLEN; i++) {
         eeprom_write(i, *rxbuf[i]);
     }
 }
 
 void clear_buf() {
-    memset(&rxbuf, 0, BUFLEN);
+    memset(&rxbuf, 0, USART_BUFLEN);
 }
 
 
@@ -116,21 +108,7 @@ void clear_buf() {
 // INTERRUPT
 
 void interrupt rx() {
-    if (PIR1bits.RCIF == 1) {
-        PIE1bits.RCIE = 0; // disable rx interrupt while recieving
-        cmd = 0xA1;
-        return;
-    }
-
-    if (PIR1bits.TMR1IF) {
-        if (--rxtoc == 0) {
-            rxto = 1;
-            T1CONbits.TMR1ON = 0;
-        }
-        tmr1_reset();
-        PIR1bits.TMR1IF = 0;
-        T1CONbits.TMR1ON = 1;
-    }
+    USART_interrupt();
 }
 
 void esp_cmd(unsigned char *data){
@@ -154,7 +132,7 @@ void start_wifi_server(){
 }
 
 void reset_wifi(){
-    if(ESP == 0){
+    if(WIFI == 0){
         WIFI_ON;
     } else {
         esp_cmd(AT_RESET);
@@ -166,13 +144,6 @@ void reset_wifi(){
 
 int main() {
     setup();
-    setup_usart();
-
-    while(1){
-        //reset_wifi();
-        report_temp();
-        delay(2000);
-    }
 
     PIR1bits.RCIF = 0; // clear interrupt flag
     INTCONbits.PEIE = 1; // enable peripheral interrupts
@@ -190,6 +161,7 @@ int main() {
             report_temp();
         }
 
+        store_buf();
         clear_buf();
         reset_wifi();
     }

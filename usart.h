@@ -1,13 +1,15 @@
 #ifndef USART_H
 #define	USART_H
 
-#ifndef BUFLEN
-#define BUFLEN 64
+#ifndef USART_BUFLEN
+#define USART_BUFLEN 64
 #endif
+
+volatile unsigned char cmd = 0;
 
 volatile unsigned char rx_byte; // usart received byte
 
-unsigned char *rxbuf[BUFLEN]; // store received bytes in the rx buffer
+unsigned char *rxbuf[USART_BUFLEN]; // store received bytes in the rx buffer
 unsigned char rxcnt = 0; // position of the rx buffer
 
 // tmr1 timeout countdown, will trigger rxto = 1 after 3 tmr1 overflows
@@ -33,5 +35,8 @@ inline void USART_put_eol();
 //reading
 void USART_read_byte();
 void read_usart();
+
+//misc
+void USART_interrupt();
 
 #endif	/* USART_H */

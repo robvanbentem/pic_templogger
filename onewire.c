@@ -9,13 +9,13 @@
  * Delay 410 us.
  */
 char ow_reset() {
-    OWOUT;
+    ONEWIRE_OUT;
     __delay_us(480); // wait for 480us+
 
-    OWIN;
+    ONEWIRE_IN;
     __delay_us(70);
 
-    short response = (OWPIN == 0);
+    short response = (ONEWIRE_PIN == 0);
     __delay_us(410);
 
     return response;
@@ -27,15 +27,15 @@ char ow_reset() {
  * Write 0: delay 60 us. Release bus, delay 10 us.
  */
 void ow_write_bit(char b) {
-    OWOUT;
+    ONEWIRE_OUT;
 
     if (b) {
         __delay_us(6);
-        OWIN;
+        ONEWIRE_IN;
         __delay_us(64);
     } else {
         __delay_us(60);
-        OWIN;
+        ONEWIRE_IN;
         __delay_us(10);
     }
 }
@@ -47,13 +47,13 @@ void ow_write_bit(char b) {
  * Delay 55 us.
  */
 char ow_read_bit() {
-    OWOUT;
+    ONEWIRE_OUT;
     __delay_us(6);
 
-    OWIN;
+    ONEWIRE_IN;
     __delay_us(9);
 
-    char response = OWPIN;
+    char response = ONEWIRE_PIN;
 
     __delay_us(55);
 

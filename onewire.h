@@ -1,12 +1,12 @@
 #ifndef ONEWIRE_H
 #define	ONEWIRE_H
 
-#ifndef OWPIN
-#define OWPIN PORTCbits.RC1
+#ifndef ONEWIRE_PIN
+#define ONEWIRE_PIN PORTCbits.RC1
 #endif
 
-#define OWIN OWPIN = 1
-#define OWOUT OWPIN = 0
+#define ONEWIRE_IN ONEWIRE_PIN = 1
+#define ONEWIRE_OUT ONEWIRE_PIN = 0
 
 char ow_reset();
 void ow_write_bit(char Bit);
