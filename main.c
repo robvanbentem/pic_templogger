@@ -17,6 +17,8 @@
 #include "onewire.h"
 #include "usart.h"
 
+#define S_DEVICE_ID "poc1"
+#define S_DEVICE_ATTR_TEMP "a"
 
 #define WIFI_ON WIFI = 1
 #define WIFI_OFF WIFI = 0
@@ -26,7 +28,7 @@
 #define AT_MUX_ON (char*)"AT+CIPMUX=1"
 #define AT_SERVER_ON (char*)"AT+CIPSERVER=1,4444"
 #define AT_RESET (char*)"AT+RST"
-#define AT_SEND_OPEN (char*)"AT+CIPSTART=4,\"TCP\",\"192.168.1.2\",4444"
+#define AT_SEND_OPEN (char*)"AT+CIPSTART=4,\"TCP\",\"192.168.1.1\",4555"
 #define AT_SEND_CLOSE (char*)"AT+CIPCLOSE=4"
 
 #define AT_RESP_OK (char*)"OK"
@@ -104,21 +106,27 @@ char wifi_report_temp() {
     if (USART_search(AT_RESP_OK)) {
         LED3 = 1;
         USART_clear_buf();
-        esp_cmd((char*) "AT+CIPSEND=4,2");
+
+        uint16_t itemp = (sign << 8) | degr;
+
+        char data[64];
+        unsigned char n = sprintf(data, "GET /log?d=%s&a=%s&v=%d HTTP/1.0\r\n\r\n", S_DEVICE_ID, S_DEVICE_ATTR_TEMP, itemp);
+
+        char cmd[18];
+        sprintf(cmd, "AT+CIPSEND=4,%d", n);
+
+        esp_cmd((char*) cmd);
         if (USART_search_chr('>')) {
             LED2 = 1;
+
             // Write temperture
-            USART_putc(sign);
-            USART_putc(degr);
+            USART_puts((char*) data);
             if (USART_search(AT_RESP_OK)) {
                 LED1 = 1;
-                //USART_clear_buf();
-                esp_cmd(AT_SEND_CLOSE);
-                if (USART_search((char*)"CLOSED")) {
-                    LED0 = 1;
-                    USART_clear_buf();
-                    return 1;
-                }
+                LED0 = 1;
+                USART_clear_buf();
+                return 1;
+
             }
         }
     }
@@ -142,14 +150,17 @@ char wifi_start_server() {
 char wifi_reset() {
     if (WIFI == 0) {
         WIFI_ON;
+        delay(1000);
     } else {
-        esp_cmd(AT_RESET);
-        USART_search(AT_RESP_OK);
-        USART_clear_buf();
+        esp_cmd((char*) "\r\n\r\n\r\n\r\n\r\n\r\n");
+        delay(1000);
     }
 
-    delay(2500);
+    esp_cmd(AT_RESET);
+    USART_search(AT_RESP_OK);
+    USART_clear_buf();
 
+    delay(2500);
 
     esp_cmd(AT_ECHO_OFF);
     if (USART_search(AT_RESP_OK)) {
@@ -182,10 +193,7 @@ int main() {
             WIFI_OFF;
         }
 
-
-        delay(30000);
         led_off();
-        delay(25000);
     }
 }
 

@@ -21,10 +21,7 @@
 #define _XTAL_FREQ 32000000
 
 // n * ~65ms timeout
-#define USART_MAX_TIMEOUT_COUNT 7
-
-// devicde id
-#define DEVICE_ID 0xB1
+#define USART_MAX_TIMEOUT_COUNT 3 // 3 * 65ms
 
 
 // CONFIG1L
