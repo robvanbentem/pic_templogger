@@ -9,16 +9,16 @@
 void setup_usart() {
     TXSTAbits.TXEN = 1; // enable transmitter
     TXSTAbits.BRGH = 1; // high baud rate mode
-    RCSTAbits.CREN = 1; // enable continous receiving
+    RCSTAbits.CREN = 1; // disable continous receiving
 
     // configure I/O pins
     TRISBbits.RB5 = 1; // RX pin is input
     TRISBbits.RB7 = 1; // TX pin is input (automatically configured)
 
-    SPBRG = 103; // set baud rate to 19200 baud (32MHz/(16*baudrate))-1
+    SPBRG = 103; //(unsigned char)(_XTAL_FREQ / (16 * 19200) - 1); // set baud rate to 19200 baud (48MHz/(16*baudrate))-1
 
     PIE1bits.RCIE = 0; // 1/0 enable/disable USART receive interrupt
-    RCSTAbits.SPEN = 1; // enable USART
+    RCSTAbits.SPEN = 0; // enable USART
 
 
     /*
@@ -92,12 +92,16 @@ void USART_put_eol() {
 }
 
 void USART_read_to_buf() {
+    USART_clear_buf();
     tmr1_begin();
 
     while (rx_timeout == 0) {
         USART_read_byte();
         if (rx_timeout == 0) {
             tmr1_reset();
+            if (rx_buf_index >= USART_BUFLEN) {
+                USART_clear_buf();
+            }
             rx_buf[rx_buf_index++] = rx_byte;
         }
     }
@@ -127,13 +131,10 @@ void USART_interrupt() {
 char USART_search(char *s) {
     USART_read_to_buf();
 
-    char* pos = strstr((char*) rx_buf, s);
+    char *pos;
+    pos = strstr(rx_buf, s);
 
-    if (pos) {
-        return 1;
-    }
-
-    return 0;
+    return (pos - rx_buf) < rx_buf_index;
 }
 
 char USART_search_chr(char c) {
@@ -153,9 +154,8 @@ char USART_search_chr(char c) {
     return 0;
 }
 
-void USART_clear_buf() {
+inline void USART_clear_buf() {
     rx_buf_index = 0;
-    memset(&rx_buf, 0, USART_BUFLEN);
 }
 
 void USART_store_buf() {
@@ -163,4 +163,13 @@ void USART_store_buf() {
         eeprom_write(n, rx_buf[n]);
     }
 
+}
+
+void USART_dump_buf() {
+    USART_putc('<');
+    for (char n = 0; n < rx_buf_index; n++) {
+        USART_putc(rx_buf[n]);
+    }
+    USART_putc('>');
+    USART_put_eol();
 }

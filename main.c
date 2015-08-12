@@ -99,34 +99,33 @@ void led_off() {
     PORTC = 0;
 }
 
+void led_on() {
+    PORTC = 1;
+}
+
 char wifi_report_temp() {
     get_temp();
 
     esp_cmd(AT_SEND_OPEN);
     if (USART_search(AT_RESP_OK)) {
-        LED3 = 1;
-        USART_clear_buf();
-
+        PORTC |= (1 << LED2);
         uint16_t itemp = (sign << 8) | degr;
-
         char data[64];
         unsigned char n = sprintf(data, "GET /log?d=%s&a=%s&v=%d HTTP/1.0\r\n\r\n", S_DEVICE_ID, S_DEVICE_ATTR_TEMP, itemp);
 
         char cmd[18];
         sprintf(cmd, "AT+CIPSEND=4,%d", n);
 
+        USART_clear_buf();
         esp_cmd((char*) cmd);
         if (USART_search_chr('>')) {
-            LED2 = 1;
+            PORTC |= (1 << LED1);
 
             // Write temperture
             USART_puts((char*) data);
             if (USART_search(AT_RESP_OK)) {
-                LED1 = 1;
-                LED0 = 1;
-                USART_clear_buf();
+                PORTC |= (1 << LED0);
                 return 1;
-
             }
         }
     }
@@ -147,28 +146,15 @@ char wifi_start_server() {
     return 0;
 }
 
-char wifi_reset() {
-    if (WIFI == 0) {
-        WIFI_ON;
-        delay(1000);
-    } else {
-        esp_cmd((char*) "\r\n\r\n\r\n\r\n\r\n\r\n");
-        delay(1000);
-    }
-
-    esp_cmd(AT_RESET);
-    USART_search(AT_RESP_OK);
-    USART_clear_buf();
-
-    delay(2500);
-
+char wifi_setup() {
+    RCSTAbits.CREN = 1;
     esp_cmd(AT_ECHO_OFF);
     if (USART_search(AT_RESP_OK)) {
         USART_clear_buf();
         esp_cmd(AT_MUX_ON);
         if (USART_search(AT_RESP_OK)) {
             USART_clear_buf();
-            LED4 = 1;
+            PORTC |= (1 << LED3);
             return 1;
         }
     }
@@ -176,24 +162,36 @@ char wifi_reset() {
     return 0;
 }
 
+char wifi_reset() {
+    RCSTAbits.CREN = 0;
+    WIFI_OFF;
+    delay(1000);
+    WIFI_ON;
+
+    delay(5000); // allow 5s for booting of esp
+    return wifi_setup();
+}
+
 int main() {
     setup();
+    WIFI_ON;
 
     INTCONbits.PEIE = 1; // enable peripheral interrupts
     INTCONbits.GIE = 1; // enable global interrupt
+    RCSTAbits.SPEN = 1; // enable uart
 
-    while (1) {
-        if (WIFI == 0) {
-            wifi_reset();
-        } else {
-            LED4 = 1;
+    if (wifi_reset()) {
+        PORTC = (1 << LED3);
+        while (1) {
+
+            if (wifi_report_temp() == 0) {
+                PORTC = (1 << LED4);
+                wifi_reset();
+            }
+
+            delay(25);
+            PORTC &= (1 << LED3);
         }
-
-        if (wifi_report_temp() == 0) {
-            WIFI_OFF;
-        }
-
-        led_off();
     }
 }
 

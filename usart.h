@@ -46,7 +46,8 @@ char USART_search_chr(char s);
 
 //misc
 void USART_interrupt();
-void USART_clear_buf();
+inline void USART_clear_buf();
 void USART_store_buf();
+void USART_dump_buf();
 
 #endif	/* USART_H */
