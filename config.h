@@ -14,15 +14,22 @@
 #define LED3 6
 #define LED4 7
 
-// esp8266 RST ping
-#define WIFI PORTBbits.RB4
+// wifi
+#define WIFI PORTBbits.RB4 // esp8266 RST pin
+#define WIFI_ON WIFI = 1
+#define WIFI_OFF WIFI = 0
 
 // clock in hz
 #define _XTAL_FREQ 32000000
 
 // we use timer1 with a 1:8 prescaler so every overflow is 1000ms / (32Mhz / 4 FOSC / 8 prescaler / 2^16 register) = ~66ms
 // USART_MAX_TIMEOUT_COUNT * 66ms = UART rx timeout (esp8266)
-#define USART_MAX_TIMEOUT_COUNT 16 // ~524ms
+#define USART_MAX_TIMEOUT_COUNT 15 // ~524ms
+
+// reporting vars
+#define S_DEVICE_ID "poc1" // devive identifier
+#define S_DEVICE_ATTR_TEMP "a" // attribute to report
+#define S_DEVICE_REPORT_INTERVAL 60 // report every n seconds
 
 
 // CONFIG1L

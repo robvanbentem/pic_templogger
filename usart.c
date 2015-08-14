@@ -36,18 +36,18 @@ void setup_usart() {
 
 // TIMER FUNC.
 
-void tmr1_begin() {
+inline void tmr1_begin() {
     tmr1_reset();
     PIR1bits.TMR1IF = 0; // reset overflow
     T1CONbits.TMR1ON = 1; // turn it on
 }
 
-void tmr1_end() {
+inline void tmr1_end() {
     T1CONbits.TMR1ON = 0; // turn it off
     PIR1bits.TMR1IF = 0; // reset overflow
 }
 
-void tmr1_reset() {
+inline void tmr1_reset() {
     rx_timeout = 0;
     rx_timeout_cnt = rx_timeout_cnt_reset;
     TMR1L = 0;
@@ -107,22 +107,21 @@ void USART_read_to_buf() {
     }
 }
 
-void USART_interrupt() {
-    if (PIR1bits.RCIF == 1) {
-        cmd = 0xA1;
-        return;
-    } else if (PIR1bits.TMR1IF) {
+inline void USART_interrupt() {
+    if (PIR1bits.TMR1IF) {
         if (--rx_timeout_cnt == 0) {
             rx_timeout = 1;
             tmr1_end();
         } else {
             //Turn timer off, reset it and turn on again
+            PIE1bits.TMR1IE = 0;
             T1CONbits.TMR1ON = 0;
 
             TMR1L = 0;
             TMR1H = 0;
             PIR1bits.TMR1IF = 0;
 
+            PIE1bits.TMR1IE = 1;
             T1CONbits.TMR1ON = 1;
         }
     }
@@ -134,7 +133,7 @@ char USART_search(char *s) {
     char *pos;
     pos = strstr(rx_buf, s);
 
-    return (pos - rx_buf) < rx_buf_index;
+    return 0 < (pos - rx_buf) < rx_buf_index;
 }
 
 char USART_search_chr(char c) {

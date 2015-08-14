@@ -24,9 +24,9 @@ volatile unsigned char rx_timeout = 0; // rx receive timeout flag
 
 // TIMER FUNC.
 
-void tmr1_begin();
-void tmr1_end();
-void tmr1_reset();
+inline void tmr1_begin();
+inline void tmr1_end();
+inline void tmr1_reset();
 
 
 // USART FUNC.
@@ -45,7 +45,7 @@ char USART_search(char *s);
 char USART_search_chr(char s);
 
 //misc
-void USART_interrupt();
+inline void USART_interrupt();
 inline void USART_clear_buf();
 void USART_store_buf();
 void USART_dump_buf();
