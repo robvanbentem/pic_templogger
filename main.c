@@ -57,7 +57,6 @@ void setup() {
 
     OSCCON = 0b11100000; // Set 8Mhz (with PLL x4 it's 32Mhz)
 
-
     T0CONbits.T08BIT = 0; // 16 bit timer
     T0CONbits.T0CS = 0; // use main clock
     T0CONbits.PSA = 0; // use a prescaler
@@ -198,9 +197,7 @@ int main() {
     while (1) {
         char result = 0;
         if (wifi_boot() == 1) {
-            PORTC |= (1 << LED4);
             result = wifi_report_temp();
-            PORTC &= ~(1 << LED4);
         }
 
         if (result == 1) {

@@ -1,11 +1,16 @@
 #ifndef _config_h
 #define _config_h
 
+// reporting vars
+#define S_DEVICE 2 // devive identifier
+#define S_DEVICE_ATTR_TEMP "a" // attribute to report
+#define S_DEVICE_REPORT_INTERVAL 60 // report every n seconds
+
 // USART receive buffer size
 #define USART_BUFLEN 255
 
 // ds18b20 pin
-#define ONEWIRE_PIN PORTCbits.RC2
+#define ONEWIRE_PIN PORTBbits.RB4
 
 // status led pin
 #define LED0 5
@@ -15,29 +20,33 @@
 #define LED4 7
 
 // wifi
-#define WIFI PORTBbits.RB4 // esp8266 RST pin
+#define WIFI PORTCbits.RC1 // esp8266 RST pin
 #define WIFI_ON WIFI = 1
 #define WIFI_OFF WIFI = 0
 
 // clock in hz
+
+#if S_DEVICE == 1
 #define _XTAL_FREQ 32000000
+#define ___OSC IRC
+#define S_DEVICE_ID "poc1"
+#elif S_DEVICE == 2
+#define _XTAL_FREQ 32000000
+#define ___OSC IRC
+#define S_DEVICE_ID "poc2"
+#endif
 
 // we use timer1 with a 1:8 prescaler so every overflow is 1000ms / (32Mhz / 4 FOSC / 8 prescaler / 2^16 register) = ~66ms
 // USART_MAX_TIMEOUT_COUNT * 66ms = UART rx timeout (esp8266)
+// @todo
 #define USART_MAX_TIMEOUT_COUNT 15 // ~524ms
-
-// reporting vars
-#define S_DEVICE_ID "poc1" // devive identifier
-#define S_DEVICE_ATTR_TEMP "a" // attribute to report
-#define S_DEVICE_REPORT_INTERVAL 60 // report every n seconds
-
 
 // CONFIG1L
 #pragma config CPUDIV = NOCLKDIV// CPU System Clock Selection bits (No CPU System Clock divide)
 #pragma config USBDIV = OFF     // USB Clock Selection bit (USB clock comes directly from the OSC1/OSC2 oscillator block; no divide)
 
 // CONFIG1H
-#pragma config FOSC = IRC       // Oscillator Selection bits (Internal RC oscillator)
+#pragma config FOSC = ___OSC
 #pragma config PLLEN = ON       // 4 X PLL Enable bit (PLL is under software control)
 #pragma config PCLKEN = OFF     // Primary Clock Enable bit (Primary clock is under software control)
 #pragma config FCMEN = OFF      // Fail-Safe Clock Monitor Enable (Fail-Safe Clock Monitor disabled)

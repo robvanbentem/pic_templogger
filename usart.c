@@ -3,6 +3,7 @@
 #include "usart.h"
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 // INIT. FUNC.
 
@@ -15,7 +16,11 @@ void setup_usart() {
     TRISBbits.RB5 = 1; // RX pin is input
     TRISBbits.RB7 = 1; // TX pin is input (automatically configured)
 
-    SPBRG = 103; //(unsigned char)(_XTAL_FREQ / (16 * 19200) - 1); // set baud rate to 19200 baud (48MHz/(16*baudrate))-1
+    #if _XTAL_FREQ == 32000000
+    SPBRG = 103;
+    #elif _XTAL_FREQ == 48000000
+    SPBRG = 155;
+    #endif
 
     PIE1bits.RCIE = 0; // 1/0 enable/disable USART receive interrupt
     RCSTAbits.SPEN = 0; // enable USART
